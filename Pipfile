@@ -8,6 +8,8 @@ verify_ssl = true
 [packages]
 pandas = "*"
 seaborn = "*"
+jupyterlab = "*"
+jupyter = "*"
 
 [requires]
 python_version = "3.7"
