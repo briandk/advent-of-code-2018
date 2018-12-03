@@ -105,3 +105,4 @@ venv.bak/
 
 # JetBrains PyCharm
 .idea/
+.Rproj.user
