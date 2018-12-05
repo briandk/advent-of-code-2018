@@ -130,8 +130,6 @@ expand_data_in_a_really_expensive_way_that_takes_a_long_time <- function(cleaned
       extend_y_expanded = extend_y,
       coordinate_pairs = generate_coordinate_pairs(start_x, start_y, extend_x, extend_y)
     )
-
-  expanded_data %>% save(file = 'expanded_data.rda')
   return(expanded_data)
 }
 
@@ -153,48 +151,77 @@ melt_data_into_long_format <- function(expanded_data) {
 
 }
 
-
-expanded_data <- raw_data %>%
-  prepare_data() %>%
-  expand_data_in_a_really_expensive_way_that_takes_a_long_time()
-
-long_data <- expanded_data %>% melt_data_into_long_format()
-
-# Part 1 answer
-#
-answer_part_1 <- function() {
+get_expanded_data_from_scratch <- function() {
   raw_data <- readr::read_delim("input.txt",
                                 col_names = FALSE,
                                 delim = " ")
   expanded_data <- raw_data %>%
     prepare_data() %>%
     expand_data_in_a_really_expensive_way_that_takes_a_long_time()
-  long_data <- expanded_data %>% melt_data_into_long_format()
-
-  answer <- long_data %>%
-    compute_doubly_claimed_coordinates() %>%
-    dim(.) %>%
-    `[`(1)
-  return(answer)
+  return(expanded_data)
 }
 
-answer_part_1() %>% print()
+get_long_data <- function() {
+  expanded_data <- get_expanded_data_from_scratch()
+  long_data <- expanded_data %>% melt_data_into_long_format()
+  return(long_data)
+}
 
-# Part 2
+#' # Part 2
 
-get_coordinate_pairs_that_appear_in_more_than_one_claim <- function(expanded_data) {
-  output <- expanded_data %>%
+get_coordinate_pairs_that_appear_in_more_than_one_claim <- function(long_data) {
+
+  output <- long_data %>%
     compute_doubly_claimed_coordinates() %>%
     select(coordinate_pairs)
 
   return(output)
 }
 
-repeats <- get_coordinate_pairs_that_appear_in_more_than_one_claim(expanded_data)
+# Part 1 answer
+#
+answer_part_1 <- function(long_data) {
+  long_data <- get_long_data()
+  answer <- long_data %>%
+    compute_doubly_claimed_coordinates() %>%
+    dim(.) %>%
+    `[`(1)
+  long_data %>% save(., file = "long_data.rda")
+  print(answer)
+  return(answer)
+}
 
+answer_part_two <- function(expanded_data, long_data) {
+  overlaps <-
+    get_coordinate_pairs_that_appear_in_more_than_one_claim(long_data) %>%
+    `$`(coordinate_pairs)
+  long_data %>% glimpse() %>% print()
+  # long_data %>%
+  #   head() %>%
+  purrr::map2(long_data$claim_id,
+              long_data$coordinate_pairs,
+              ~ paste(.x, .y, sep = "===")) %>%
+    unlist() %>%
+    head() %>%
+    print()
+}
+
+
+
+answer_the_questions <- function() {
+  expanded_data <- get_expanded_data_from_scratch()
+  long_data <- expanded_data %>% melt_data_into_long_format()
+  answer_part_1(long_data)
+  answer_part_two(expanded_data = expanded_data, long_data = long_data)
+}
+
+answer_the_questions()
 
 
 # "10-153" %in% repeats$coordinate_pairs %>% print()
+#
+
+
 
 
 
