@@ -191,19 +191,51 @@ answer_part_1 <- function(long_data) {
   return(answer)
 }
 
+check_if_coordinates_are_on_the_naughty_list <- function(coordinates, naughty_list) {
+  coordinates_are_naughty <- coordinates %in% naughty_list
+  return(coordinates_are_naughty)
+}
+
 answer_part_two <- function(expanded_data, long_data) {
-  overlaps <-
+  naughty_list <-
     get_coordinate_pairs_that_appear_in_more_than_one_claim(long_data) %>%
     `$`(coordinate_pairs)
-  long_data %>% glimpse() %>% print()
-  # long_data %>%
-  #   head() %>%
-  purrr::map2(long_data$claim_id,
-              long_data$coordinate_pairs,
-              ~ paste(.x, .y, sep = "===")) %>%
-    unlist() %>%
+  print("naughty list is: ")
+  naughty_list %>% head() %>% print()
+  print("----------")
+  long_data %>%
+    filter(str_detect(coordinate_pairs, "10-")) %>%
     head() %>%
     print()
+  print("-------")
+  # long_data %>%
+  #   head() %>%
+  #   mutate(is_naughty = check_if_coordinates_are_on_the_naughty_list(coordinate_pairs, naughty_list)) %>%
+  #   head() %>%
+  #   print()
+
+  # duplicate_filter <- purrr::map(expanded_data$coordinate_pairs %>% head(), function(pairs) {
+  #   splits <- pairs %>% str_split(",")
+  #   for (coordinates in splits) {
+  #     for (overlap in overlaps) {
+  #
+  #     }
+  #   }
+  #
+  #   output <- TRUE
+  #   map(overlaps, function(overlap) {
+  #     output <- TRUE
+  #     if (pair %>% str_detect(overlap)) {
+  #       output <- FALSE
+  #     }
+  #     return(output)
+  #   })
+  # })
+  # duplicate_filter %>%
+  #   unlist() %>%
+  #   head() %>%
+  #   glimpse() %>%
+  #   print()
 }
 
 
@@ -211,8 +243,9 @@ answer_part_two <- function(expanded_data, long_data) {
 answer_the_questions <- function() {
   expanded_data <- get_expanded_data_from_scratch()
   long_data <- expanded_data %>% melt_data_into_long_format()
-  answer_part_1(long_data)
-  answer_part_two(expanded_data = expanded_data, long_data = long_data)
+  # answer_part_1(long_data)
+  answer_part_two(expanded_data = expanded_data,
+                  long_data = long_data)
 }
 
 answer_the_questions()
