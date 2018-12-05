@@ -55,11 +55,6 @@ library(readr)
 library(stringr)
 library(tidyr)
 
-
-raw_data <- readr::read_delim("input.txt",
-                              col_names = FALSE,
-                              delim = " ")
-
 clean_data <- function(raw_data) {
   return(
     raw_data %>%
@@ -82,10 +77,6 @@ separate_coordinates_and_area <- function(clean_data) {
   )
 }
 
-cleaned_data <- raw_data %>%
-  clean_data() %>%
-  separate_coordinates_and_area() %>%
-  map_df(~ as.numeric(.))
 
 split_into_columns <- function(cleaned_data) {
   return(separate_coordinates_and_area(cleaned_data) %>%
@@ -147,8 +138,6 @@ expand_data_in_a_really_expensive_way_that_takes_a_long_time <- function(cleaned
 compute_doubly_claimed_coordinates <- function(cleaned_data) {
   return(
     cleaned_data %>%
-      unnest(coordinate_pairs) %>%
-      separate_rows() %>%
       count(coordinate_pairs) %>%
       filter(n > 1)
 
@@ -157,7 +146,8 @@ compute_doubly_claimed_coordinates <- function(cleaned_data) {
 
 melt_data_into_long_format <- function(expanded_data) {
   long_data <- expanded_data %>%
-    tidyr::separate_rows(coordinate_pairs, sep = ",")
+    tidyr::separate_rows(coordinate_pairs, sep = ",") %>%
+    select(claim_id, coordinate_pairs)
 
   return(long_data)
 
@@ -166,7 +156,45 @@ melt_data_into_long_format <- function(expanded_data) {
 
 expanded_data <- raw_data %>%
   prepare_data() %>%
-  expand_data_in_a_really_expensive_way_that_takes_a_long_time() %>%
-  melt_data_into_long_format()
+  expand_data_in_a_really_expensive_way_that_takes_a_long_time()
 
-# compute_doubly_claimed_coordinates(cleaned_data)
+long_data <- expanded_data %>% melt_data_into_long_format()
+
+# Part 1 answer
+#
+answer_part_1 <- function() {
+  raw_data <- readr::read_delim("input.txt",
+                                col_names = FALSE,
+                                delim = " ")
+  expanded_data <- raw_data %>%
+    prepare_data() %>%
+    expand_data_in_a_really_expensive_way_that_takes_a_long_time()
+  long_data <- expanded_data %>% melt_data_into_long_format()
+
+  answer <- long_data %>%
+    compute_doubly_claimed_coordinates() %>%
+    dim(.) %>%
+    `[`(1)
+  return(answer)
+}
+
+answer_part_1() %>% print()
+
+# Part 2
+
+get_coordinate_pairs_that_appear_in_more_than_one_claim <- function(expanded_data) {
+  output <- expanded_data %>%
+    compute_doubly_claimed_coordinates() %>%
+    select(coordinate_pairs)
+
+  return(output)
+}
+
+repeats <- get_coordinate_pairs_that_appear_in_more_than_one_claim(expanded_data)
+
+
+
+# "10-153" %in% repeats$coordinate_pairs %>% print()
+
+
+
