@@ -69,10 +69,11 @@ raw_data <- readr::read_delim("input.txt",
 clean_data <- function(raw_data) {
   return(
     raw_data %>%
-      mutate(claim = stringr::str_remove(X1, "#")) %>%
-      mutate(starting_coordinates = stringr::str_remove(X3, ":")) %>%
-      mutate(area = X4) %>%
-      select(id, starting_coordinates, area)
+      # debug_pipe() %>%
+      mutate(claim_id = stringr::str_remove(X1, "#")) %>% 
+      mutate(starting_coordinates = stringr::str_remove(X3, ":")) %>% 
+      mutate(area = X4) %>% 
+      select(claim_id, starting_coordinates, area)
   )
 }
 
@@ -89,7 +90,7 @@ separate_coordinates_and_area <- function(clean_data) {
 }
   
 cleaned_data <- raw_data %>%
-  clean_data %>%
+  clean_data() %>%
   separate_coordinates_and_area() %>% 
   map_df(~ as.numeric(.))
 
@@ -111,6 +112,8 @@ generate_coordinate_pairs <-
         combined_pairs <- c(combined_pairs, paste(x, y, sep = "-"))
       }
     }
+    collapsed_combined_pairs <-
+      combined_pairs %>% paste(sep = "+") %>% debug_pipe()
     # combined_pairs <- paste(combined_pairs, collapse=",")
     # print(combined_pairs)
     # print(length(combined_pairs))
@@ -126,8 +129,6 @@ fake_function <- function(x, y) {
   return(x + y)
 }
 
-generate_coordinate_pairs(0, 0, 3, 4)
-
 # cleaned_data %<>% 
 #   mutate(coordinate_pairs = fake_function(extend_x, extend_y))
 
@@ -137,8 +138,14 @@ expand_data_in_a_really_expensive_way_that_takes_a_long_time <- function(cleaned
   
   expanded_data <- cleaned_data %>%
     rowwise() %>%
-    do(coordinate_pairs = generate_coordinate_pairs(.$start_x, .$start_y, .$extend_x, .$extend_y),
-       claim_id = claim)
+    mutate(
+      claim_id_expanded = claim_id,
+      start_x_expanded = start_x,
+      start_y_expanded = start_y,
+      extend_x_expanded = extend_x,
+      extend_y_expanded = extend_y,
+      coordinate_pairs = generate_coordinate_pairs(start_x, start_y, extend_x, extend_y)
+    )
   
   expanded_data %>% save(file = 'expanded_data.rda')
   return(expanded_data)
