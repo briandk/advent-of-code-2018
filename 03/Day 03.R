@@ -70,7 +70,9 @@ clean_data <- function(raw_data) {
 separate_coordinates_and_area <- function(clean_data) {
   return(
     clean_data %>%
-      tidyr::separate(starting_coordinates, into = c("start_x", "start_y")) %>%
+      tidyr::separate(starting_coordinates,
+                      sep = ",",
+                      into = c("start_x", "start_y")) %>%
       tidyr::separate(area,
                       sep = "x",
                       into = c("extend_x", "extend_y"))
@@ -128,7 +130,7 @@ expand_data_in_a_really_expensive_way_that_takes_a_long_time <- function(cleaned
       start_y_expanded = start_y,
       extend_x_expanded = extend_x,
       extend_y_expanded = extend_y,
-      coordinate_pairs = generate_coordinate_pairs(start_x, start_y, extend_x, extend_y)
+      raw_coordinate_pairs = generate_coordinate_pairs(start_x, start_y, extend_x, extend_y)
     )
   return(expanded_data)
 }
@@ -136,16 +138,15 @@ expand_data_in_a_really_expensive_way_that_takes_a_long_time <- function(cleaned
 compute_doubly_claimed_coordinates <- function(cleaned_data) {
   return(
     cleaned_data %>%
-      count(coordinate_pairs) %>%
+      count(raw_coordinate_pairs) %>%
       filter(n > 1)
-
   )
 }
 
 melt_data_into_long_format <- function(expanded_data) {
   long_data <- expanded_data %>%
-    tidyr::separate_rows(coordinate_pairs, sep = ",") %>%
-    select(claim_id, coordinate_pairs)
+    tidyr::separate_rows(raw_coordinate_pairs, sep = ",") %>%
+    select(claim_id, raw_coordinate_pairs)
 
   return(long_data)
 
@@ -173,7 +174,7 @@ get_coordinate_pairs_that_appear_in_more_than_one_claim <- function(long_data) {
 
   output <- long_data %>%
     compute_doubly_claimed_coordinates() %>%
-    select(coordinate_pairs)
+    select(raw_coordinate_pairs)
 
   return(output)
 }
@@ -182,16 +183,17 @@ get_coordinate_pairs_that_appear_in_more_than_one_claim <- function(long_data) {
 #
 answer_part_1 <- function(long_data) {
   long_data <- get_long_data()
-  answer <- long_data %>%
-    compute_doubly_claimed_coordinates() %>%
+  doubly_claimed_coordinates <- long_data %>%
+    compute_doubly_claimed_coordinates()
+  answer <- doubly_claimed_coordinates %>%
     dim(.) %>%
     `[`(1)
-  long_data %>% save(., file = "long_data.rda")
   print(answer)
-  return(answer)
+  print(doubly_claimed_coordinates %>% head())
+  return(doubly_claimed_coordinates)
 }
 
-check_if_coordinates_are_on_the_naughty_list <- function(coordinates, naughty_list) {
+coordinates_are_on_the_naughty_list <- function(coordinates, naughty_list) {
   coordinates_are_naughty <- coordinates %in% naughty_list
   return(coordinates_are_naughty)
 }
@@ -199,20 +201,23 @@ check_if_coordinates_are_on_the_naughty_list <- function(coordinates, naughty_li
 answer_part_two <- function(expanded_data, long_data) {
   naughty_list <-
     get_coordinate_pairs_that_appear_in_more_than_one_claim(long_data) %>%
-    `$`(coordinate_pairs)
+    `$`(raw_coordinate_pairs)
   print("naughty list is: ")
   naughty_list %>% head() %>% print()
-  print("----------")
-  long_data %>%
-    filter(str_detect(coordinate_pairs, "10-")) %>%
-    head() %>%
-    print()
-  print("-------")
+  # print("----------")
   # long_data %>%
-  #   head() %>%
-  #   mutate(is_naughty = check_if_coordinates_are_on_the_naughty_list(coordinate_pairs, naughty_list)) %>%
+  #   debug_pipe %>%
+  #   filter(str_detect(raw_coordinate_pairs, "10-")) %>%
   #   head() %>%
   #   print()
+  print("-------")
+  is_nice <- long_data %>%
+    mutate(is_nice = !(coordinates_are_on_the_naughty_list(raw_coordinate_pairs, naughty_list))) %>%
+    # filter(is_nice == TRUE) %>%
+    group_by(claim_id) %>%
+    summarise(sum_nice = sum(is_nice), count = n()) %>%
+    filter(sum_nice == count) %>%
+    print()
 
   # duplicate_filter <- purrr::map(expanded_data$coordinate_pairs %>% head(), function(pairs) {
   #   splits <- pairs %>% str_split(",")
@@ -243,7 +248,7 @@ answer_part_two <- function(expanded_data, long_data) {
 answer_the_questions <- function() {
   expanded_data <- get_expanded_data_from_scratch()
   long_data <- expanded_data %>% melt_data_into_long_format()
-  # answer_part_1(long_data)
+  answer_part_1(long_data)
   answer_part_two(expanded_data = expanded_data,
                   long_data = long_data)
 }
@@ -254,7 +259,7 @@ answer_the_questions()
 # "10-153" %in% repeats$coordinate_pairs %>% print()
 #
 
-
+#
 
 
 
