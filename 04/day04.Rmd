@@ -1,0 +1,21 @@
+---
+title: "Advent of Code 2018 - Day 04"
+output: html_notebook
+---
+
+```{r}
+library(dplyr)
+library(lubridate)
+library(magrittr)
+library(readr)
+library(tidyr)
+```
+
+```{r}
+log_data <- readr::read_csv("input.csv") %>% 
+  arrange(timestamp)
+log_data %>% glimpse
+```
+
+
+
